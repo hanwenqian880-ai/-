@@ -1,0 +1,119 @@
+{% extends 'literature/base.html' %}
+
+{% block title %}首页概览 - 组会文献管理系统{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_literatures }}</div>
+            <div class="stat-label">文献总数</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">用户数量</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-number">{{ total_checks }}</div>
+            <div class="stat-label">查重次数</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-number text-danger">{{ duplicates }}</div>
+            <div class="stat-label">重复文献</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> 最近上传</h5>
+                <a href="{% url 'literature_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                {% if recent_literatures %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>标题</th>
+                                <th>作者</th>
+                                <th>上传者</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lit in recent_literatures %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'literature_detail' lit.id %}">{{ lit.title|truncatechars:30 }}</a>
+                                </td>
+                                <td>{{ lit.authors|truncatechars:20|default:"-" }}</td>
+                                <td>{{ lit.uploader.get_full_name|default:lit.uploader.username }}</td>
+                                <td>{{ lit.created_at|date:"m-d H:i" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">暂无文献，<a href="{% url 'literature_upload' %}">立即上传</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> 快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'literature_upload' %}" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> 上传新文献
+                    </a>
+                    <a href="{% url 'literature_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-search"></i> 搜索文献
+                    </a>
+                    <a href="{% url 'export_excel' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-file-earmark-excel"></i> 导出Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> 最近活动</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_logs %}
+                <ul class="list-group list-group-flush">
+                    {% for log in recent_logs %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ log.user.get_full_name|default:log.user.username }}</strong>
+                                <span class="text-muted">{{ log.get_action_display }}</span>
+                            </div>
+                            <small class="text-muted">{{ log.created_at|timesince }}前</small>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center">暂无活动记录</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

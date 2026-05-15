@@ -1,0 +1,70 @@
+{% extends 'literature/base.html' %}
+
+{% block title %}系统设置 - 组会文献管理系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-gear"></i> 系统设置</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_similarity_threshold" class="form-label">查重相似度阈值</label>
+                        <input type="number" name="similarity_threshold" id="id_similarity_threshold"
+                               class="form-control" step="0.01" min="0" max="1"
+                               value="{{ form.similarity_threshold.value|default:0.7 }}">
+                        <div class="form-text">相似度超过此阈值将被判定为重复（0-1之间，如0.7表示70%）</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_max_file_size" class="form-label">最大文件大小(MB)</label>
+                        <input type="number" name="max_file_size" id="id_max_file_size"
+                               class="form-control" min="1" max="100"
+                               value="{{ form.max_file_size.value|default:50 }}">
+                        <div class="form-text">上传文件的最大大小限制（1-100MB）</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> 保存设置
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> 设置说明</h5>
+            </div>
+            <div class="card-body">
+                <h6>查重相似度阈值</h6>
+                <p class="text-muted">
+                    设置查重结果的判定阈值。当检测到的相似度超过此阈值时，系统会将文献标记为"可能重复"。
+                    建议设置在0.6-0.8之间，过低可能导致误报，过高可能漏检。
+                </p>
+
+                <h6>最大文件大小</h6>
+                <p class="text-muted">
+                    限制用户上传的PDF文件大小，防止过大的文件占用存储空间和影响系统性能。
+                    建议设置在20-50MB之间，大多数学术论文PDF都在此范围内。
+                </p>
+
+                <hr>
+
+                <h6>其他说明</h6>
+                <ul class="text-muted">
+                    <li>设置修改后会立即生效</li>
+                    <li>所有设置修改都会记录在操作日志中</li>
+                    <li>建议定期检查查重阈值是否合适</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

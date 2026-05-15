@@ -1,0 +1,35 @@
+# Django
+Django>=4.2
+django-crispy-forms>=2.1
+crispy-bootstrap5>=0.7
+
+# Database
+mysqlclient>=2.2
+
+# File handling
+PyPDF2>=3.0
+pdfplumber>=0.10
+python-magic-bin>=0.4;sys_platform == 'win32'
+python-magic>=0.4;sys_platform != 'win32'
+
+# Excel export
+openpyxl>=3.1
+pandas>=2.2
+
+# Security
+bcrypt>=4.1
+Pillow>=10.2
+
+# HTTP requests
+requests>=2.31
+
+# Production server
+gunicorn>=21.2
+whitenoise>=6.6
+
+# Environment
+python-dotenv>=1.0
+
+# Text processing for similarity
+scikit-learn>=1.4
+jieba>=0.42

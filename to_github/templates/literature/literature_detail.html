@@ -1,0 +1,186 @@
+{% extends 'literature/base.html' %}
+
+{% block title %}{{ literature.title }} - 组会文献管理系统{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'literature_list' %}">文献列表</a></li>
+        <li class="breadcrumb-item active">{{ literature.title|truncatechars:30 }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> 文献详情</h5>
+                <div class="btn-group">
+                    <a href="{% url 'literature_download' literature.id %}" class="btn btn-success btn-sm">
+                        <i class="bi bi-download"></i> 下载PDF
+                    </a>
+                    {% if can_modify %}
+                    <a href="{% url 'literature_edit' literature.id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-pencil"></i> 编辑
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="mb-3">{{ literature.title }}</h4>
+
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="100">作者</th>
+                        <td>{{ literature.authors|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>期刊/会议</th>
+                        <td>{{ literature.journal|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>年份</th>
+                        <td>{{ literature.year|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>DOI</th>
+                        <td>
+                            {% if literature.doi %}
+                            <a href="https://doi.org/{{ literature.doi }}" target="_blank">{{ literature.doi }}</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>关键词</th>
+                        <td>
+                            {% if literature.keywords %}
+                            {% for kw in literature.keywords.split %}
+                            <span class="badge bg-light text-dark me-1">{{ kw }}</span>
+                            {% endfor %}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>分享人</th>
+                        <td>{{ literature.presenter|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>组会日期</th>
+                        <td>{{ literature.meeting_date|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>上传者</th>
+                        <td>{{ literature.uploader.get_full_name|default:literature.uploader.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>上传时间</th>
+                        <td>{{ literature.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>文件大小</th>
+                        <td>{{ literature.get_file_size_display }}</td>
+                    </tr>
+                </table>
+
+                {% if literature.abstract %}
+                <hr>
+                <h6>摘要</h6>
+                <p class="text-muted">{{ literature.abstract }}</p>
+                {% endif %}
+
+                {% if literature.notes %}
+                <hr>
+                <h6>备注</h6>
+                <p class="text-muted">{{ literature.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Plagiarism Check -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> 查重检测</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'plagiarism_check' literature.id %}" class="btn btn-primary w-100 mb-3">
+                    <i class="bi bi-search"></i> 开始查重
+                </a>
+
+                {% if checks %}
+                <h6 class="mb-3">历史检测记录</h6>
+                <ul class="list-group list-group-flush">
+                    {% for check in checks %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if check.similarity_score %}
+                                <span class="{% if check.similarity_score >= 0.7 %}similarity-high{% elif check.similarity_score >= 0.4 %}similarity-medium{% else %}similarity-low{% endif %}">
+                                    {{ check.similarity_score|floatformat:1 }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ check.created_at|date:"m-d H:i" }}</small>
+                            </div>
+                            <span class="badge {% if check.status == 'completed' %}bg-success{% elif check.status == 'processing' %}bg-warning{% elif check.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ check.get_status_display }}
+                            </span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> 快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'literature_download' literature.id %}" class="btn btn-outline-success">
+                        <i class="bi bi-download"></i> 下载PDF
+                    </a>
+                    {% if can_modify %}
+                    <button type="button" class="btn btn-outline-danger" onclick="deleteLiterature()">
+                        <i class="bi bi-trash"></i> 删除文献
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function deleteLiterature() {
+        if (confirm('确定要删除这篇文献吗？此操作不可恢复。')) {
+            fetch('{% url "literature_delete" literature.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{% url "literature_list" %}';
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}组会文献管理系统{% endblock %}</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .navbar {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            background-color: white;
+            min-height: calc(100vh - 56px);
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .sidebar .nav-link {
+            color: var(--secondary-color);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin: 0.25rem 0.5rem;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .sidebar .nav-link.active {
+            background-color: #dbeafe;
+            color: var(--primary-color);
+        }
+
+        .sidebar .nav-link i {
+            width: 1.25rem;
+        }
+
+        .main-content {
+            padding: 1.5rem;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 1.25rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+
+        .table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: var(--secondary-color);
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .badge-role {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .search-box {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .literature-card {
+            transition: transform 0.2s;
+        }
+
+        .literature-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .similarity-high {
+            color: var(--danger-color);
+        }
+
+        .similarity-medium {
+            color: var(--warning-color);
+        }
+
+        .similarity-low {
+            color: var(--success-color);
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-card .stat-label {
+            color: var(--secondary-color);
+        }
+
+        .file-upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: #f8fafc;
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: #dbeafe;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1050;
+        }
+
+        @media print {
+            .sidebar, .navbar, .btn-group {
+                display: none !important;
+            }
+            .main-content {
+                width: 100% !important;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
+                <i class="bi bi-journal-bookmark-fill text-primary"></i>
+                组会文献管理系统
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-muted me-3">
+                    <i class="bi bi-person-circle"></i>
+                    {{ user.get_full_name|default:user.username }}
+                    {% if user.is_admin %}
+                    <span class="badge bg-danger badge-role">管理员</span>
+                    {% else %}
+                    <span class="badge bg-secondary badge-role">成员</span>
+                    {% endif %}
+                </span>
+                <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-box-arrow-right"></i> 退出
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar py-3">
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                       href="{% url 'dashboard' %}">
+                        <i class="bi bi-speedometer2"></i> 首页概览
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'literature_list' %}active{% endif %}"
+                       href="{% url 'literature_list' %}">
+                        <i class="bi bi-journal-text"></i> 文献列表
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'literature_upload' %}active{% endif %}"
+                       href="{% url 'literature_upload' %}">
+                        <i class="bi bi-upload"></i> 上传文献
+                    </a>
+
+                    {% if user.is_admin %}
+                    <hr class="my-2">
+                    <span class="text-muted small px-3 py-2">管理员功能</span>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}"
+                       href="{% url 'user_list' %}">
+                        <i class="bi bi-people"></i> 用户管理
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'operation_logs' %}active{% endif %}"
+                       href="{% url 'operation_logs' %}">
+                        <i class="bi bi-clock-history"></i> 操作日志
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'system_settings' %}active{% endif %}"
+                       href="{% url 'system_settings' %}">
+                        <i class="bi bi-gear"></i> 系统设置
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-5">
+                {% block login_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} text-white">
+                <strong class="me-auto">
+                    {% if message.tags == 'error' %}错误{% elif message.tags == 'warning' %}警告{% elif message.tags == 'success' %}成功{% else %}提示{% endif %}
+                </strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">{{ message }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Auto-hide toasts
+        document.addEventListener('DOMContentLoaded', function() {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                setTimeout(function() {
+                    toast.classList.remove('show');
+                }, 5000);
+            });
+        });
+
+        // File upload drag and drop
+        const uploadArea = document.querySelector('.file-upload-area');
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                const fileInput = document.querySelector('input[type="file"]');
+                if (fileInput && e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    this.querySelector('span').textContent = e.dataTransfer.files[0].name;
+                }
+            });
+        }
+
+        // Confirm delete
+        function confirmDelete(message, callback) {
+            if (confirm(message || '确定要删除吗？此操作不可恢复。')) {
+                callback();
+            }
+        }
+
+        // Batch operations
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.literature-checkbox');
+            checkboxes.forEach(function(cb) {
+                cb.checked = checkbox.checked;
+            });
+            updateBatchButtons();
+        }
+
+        function updateBatchButtons() {
+            const checked = document.querySelectorAll('.literature-checkbox:checked');
+            const batchBtns = document.querySelectorAll('.batch-btn');
+            batchBtns.forEach(function(btn) {
+                btn.disabled = checked.length === 0;
+            });
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
